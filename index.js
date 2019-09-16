@@ -29,21 +29,22 @@ server.post('/api/register', (req, res) => {
     });
 });
 
-server.post('/api/login', (req, res) => {
-  let { username, password } = req.body;
+server.post('/api/login',auth, (req, res) => {
+  res.status(200).json({message: `Welcome ${req.user.username}!`});
+  // let { username, password } = req.body;
 
-  Users.findBy({ username })
-    .first()
-    .then(user => {
-      if (user && bcrypt.compareSync(password, user.password)) {
-        return res.status(200).json({ message: `Welcome ${user.username}!` });
-      } else {
-        res.status(401).json({ message: 'Invalid Credentials' });
-      }
-    })
-    .catch(error => {
-      res.status(500).json(error);
-    });
+  // Users.findBy({ username })
+  //   .first()
+  //   .then(user => {
+  //     if (user && bcrypt.compareSync(password, user.password)) {
+  //       res.status(200).json({ message: `Welcome ${user.username}!` });
+  //     } else {
+  //       res.status(401).json({ message: 'Invalid Credentials' });
+  //     }
+  //   })
+  //   .catch(error => {
+  //     res.status(500).json(error);
+  //   });
 });
 
 server.get('/api/users', (req, res) => {
@@ -65,3 +66,29 @@ server.get('/hash', (req, res) => {
 
 const port = process.env.PORT || 5000;
 server.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
+
+
+/*
+
+*/
+
+//middleware
+
+function auth(req, res, next) {
+  let {username, password} = req.body;
+
+  Users.findBy({ username })
+    .first()
+    .then(user => {
+      if(user && bcrypt.compareSync(password, user.password)) {
+        req.user = user;
+        next();
+      } else {
+        res.status(401).json({ message: 'Invalid Credentials' })
+      };
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({error: 'error retreiving user information'});
+    });
+};
